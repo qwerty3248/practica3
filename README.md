@@ -37,7 +37,7 @@ Una vez lo hayas modificado, guarda el fichero, y ejecuta los siguientes comando
 ```
 git add . 
 git commit -m "Cambiando el enlace del botón"
-git push origin main 
+git push origin master 
 ```
 
 Los tres comandos anteriores le indican a git que 1) queremos guardar una nueva versión con todos los ficheros modificados de la carpeta, 2) que haga esa versión y le ponga el comentario "Cambiando el enlace del botón", y 3) que envíe esta nueva versión a la copia de nuestro repositorio alojada en GitHub.
@@ -53,11 +53,11 @@ Aunque tu repositorio y el de la asignatura (recuerda que los conocemos por *ori
 
 
 ### Actualizar tu repositorio con cambios realizados en el de la asignatura
-Una vez tengas los repositiorios enlazados, lo único que debes hacer para aplicar posibles cambios en el repositorio de la asignatura en tu repositorio (cambios de *upstream* en *origin*) es: `git pull upstream main`
+Una vez tengas los repositiorios enlazados, lo único que debes hacer para aplicar posibles cambios en el repositorio de la asignatura en tu repositorio (cambios de *upstream* en *origin*) es: `git pull upstream master`
 
 Hacer esto no sobreescribirá tus avances en la implementación de la práctica, puesto que tú no deberías haber modificado ninguna parte del código diferente a la que se indica en el guión.
 
-Si quieres que esos cambios también se guarden en github, a continuación ejecuta: `git push origin main`
+Si quieres que esos cambios también se guarden en github, a continuación ejecuta: `git push origin master`
 
 
 > Si quieres saber más sobre Git y GitHub, en Internet existen multitud de recursos, incluidos videos y tutoriales. Para realizar esta práctica sólo necesitas lo básico (hacer commits), pero hay muchas cosas más que se pueden hacer con estas herramientas (uso de ramas, gestión de conflictos, etc.) 
