@@ -5,7 +5,7 @@ const double masinf = 9999999999.0, menosinf = -9999999999.0;
 const double gana = masinf - 1, pierde = menosinf + 1;
 const int num_pieces = 3;
 const int PROFUNDIDAD_MINIMAX = 4;  // Umbral maximo de profundidad para el metodo MiniMax
-const int PROFUNDIDAD_ALFABETA = 6; // Umbral maximo de profundidad para la poda Alfa_Beta
+const int PROFUNDIDAD_ALFABETA = 3; // Umbral maximo de profundidad para la poda Alfa_Beta
 
 bool AIPlayer::move(){
     cout << "Realizo un movimiento automatico" << endl;
@@ -399,7 +399,125 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador){
     }
 }
 double AIPlayer::MiValoracion2(const Parchis &estado, int jugador){
-    return 0.0;
+    //return 0.0;
+    
+    int ganador = estado.getWinner();
+    int oponente = (jugador+1)%2;
+    const int CASILLASRECORRER = 68 + 7;//Las casillas que va a recorrer cada ficha
+
+    if (ganador == jugador)
+    {   
+        return gana;
+    }
+    else if (ganador == oponente)
+    {
+        return pierde;
+    }
+    else
+    {
+        vector<color> my_colors = estado.getPlayerColors(jugador);
+        vector<color> op_colors = estado.getPlayerColors(oponente);
+
+        double puntuacion_jugador = 0.0;
+
+        if (estado.getCurrentPlayerId() == jugador)
+        {
+            if (estado.isEatingMove())
+            {
+                pair<color,int> Comidas = estado.eatenPiece();
+
+                if (Comidas.first == my_colors[0] || Comidas.first == my_colors[1]) // igual que la valoracion anterior
+                {
+                    puntuacion_jugador += 1;
+                }
+                else
+                {
+                    puntuacion_jugador += 80;
+                }
+
+
+            }
+            else if (estado.isGoalMove())
+            {
+                puntuacion_jugador += 40;
+            }
+            else
+            {
+                if (estado.goalBounce())
+                {
+                    puntuacion_jugador -= 2;
+                }
+            }
+        }
+        //Dados poner
+
+        //Dados termina
+
+        //Recorremos las fichas
+        for (int i = 0; i < my_colors.size(); i++)
+        {
+            color c = my_colors[i];
+            puntuacion_jugador += estado.piecesAtHome(c) * 2;//Afecta MUY negativamente
+            //Recorremos las fichas de ese color
+            for (int j = 0; j < num_pieces; j++)
+            {   
+                //Solo nos basamos en las fichas de si estan en meta o no, antes nos fijabamos más en cauntas habia ahora hacemos algo parecido
+                puntuacion_jugador += CASILLASRECORRER - estado.distanceToGoal(c,j) + estado.piecesAtGoal(c) * 4;
+            }
+        }
+
+        double puntuacion_oponente = 0.0;
+
+        if (estado.getCurrentPlayerId() == oponente)
+        {
+            if (estado.isEatingMove())
+            {
+                pair<color,int> Comidas = estado.eatenPiece();
+
+                if (Comidas.first == my_colors[0] || Comidas.first == my_colors[1]) // igual que la valoracion anterior
+                {
+                    puntuacion_oponente += 1;
+                }
+                else
+                {
+                    puntuacion_oponente += 80;
+                }
+
+
+            }
+            else if (estado.isGoalMove())
+            {
+                puntuacion_oponente += 40;
+            }
+            else
+            {
+                if (estado.goalBounce())
+                {
+                    puntuacion_oponente -= 2;
+                }
+            }
+        }
+        //Dados poner
+
+        //Dados termina
+        
+        //Recorremos las fichas
+        for (int i = 0; i < my_colors.size(); i++)
+        {
+            color c = my_colors[i];
+            puntuacion_oponente += estado.piecesAtHome(c) * 2;//Afecta MUY negativamente
+            //Recorremos las fichas de ese color
+            for (int j = 0; j < num_pieces; j++)
+            {   
+                //Solo nos basamos en las fichas de si estan en meta o no, antes nos fijabamos más en cauntas habia ahora hacemos algo parecido
+                puntuacion_oponente += CASILLASRECORRER - estado.distanceToGoal(c,j) + estado.piecesAtGoal(c) * 4;
+            }
+        }
+
+        return puntuacion_jugador-puntuacion_oponente;
+    }
+
+
 }
 
 
