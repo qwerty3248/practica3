@@ -21,6 +21,7 @@ bool AIPlayer::move(){
     return true;
 }
 
+//aparentemente funciona 😡😡
 double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristic)(const Parchis &, int)) const
 {
     //Si la profundidad es igual al la profundidad_max o se acabo el juego damos la puntuacion
@@ -28,7 +29,7 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
         return heuristic(actual,jugador);
     }
 
-    //La bebesita bebe lean
+    //🚗🚗
     bool Max_verstappen = actual.getCurrentPlayerId() == jugador; //Nodo max ?
     double valor; //valor que devuelve el nene
 
@@ -53,7 +54,9 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
 
             if (alpha >= beta)//Si podamos devolvemos beta 
             {
+                //cout << "Podo alpha\n";
                 return beta;
+
             }
 
         }
@@ -66,6 +69,7 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
 
             if (beta <= alpha)//Si se poda
             {
+                //cout<<"Podo beta\n";
                 return alpha;
             }
         }
@@ -251,7 +255,7 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador){
         {
             if (estado.isGoalMove())//SI mete ficha
             {   
-                puntuacion_jugador += 10 ; // Los puntuajes no son definitivos todavia
+                puntuacion_jugador += 30 ; // Los puntuajes no son definitivos todavia
             }
 
             if (estado.isEatingMove())//Si se come una ficha
@@ -261,7 +265,7 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador){
                 //Ahora miramos que no se una de las suyas porque puede comerse una de sus dos colores
                 if (piezasComidas.first == my_colors[0] || piezasComidas.first == my_colors[1]) //Si es uno de mis dos colores afecta negativamente
                 {
-                    puntuacion_jugador += 5; //Le devo restar o solo sumo, esto tengo que preguntarlo
+                    puntuacion_jugador -= 5; //Le devo restar o solo sumo, esto tengo que preguntarlo
                 }
                 else
                 {
@@ -272,7 +276,7 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador){
             //Si revota en la meta vale menos porque prefiero que la meta con los movimientos justos
             if (estado.goalBounce())
             {
-                puntuacion_jugador += 2;
+                puntuacion_jugador += 1;
             }
 
         }
@@ -313,7 +317,7 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador){
                     }
                     else if (estado.piecesAtGoal(c) == 2)
                     {
-                        puntuacion_jugador += (100-estado.distanceToGoal(c,i)) * 2;//Meterla ya porque nos dara la victoria
+                        puntuacion_jugador += (100-estado.distanceToGoal(c,i)) * 4;//Meterla ya porque nos dara la victoria
                     }
                 }
             }
@@ -327,7 +331,7 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador){
         {
             if (estado.isGoalMove())
             {
-                puntuacion_oponente += 5;
+                puntuacion_oponente += 30;
             }
 
             if (estado.isEatingMove())
@@ -336,17 +340,17 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador){
 
                 if (piezasComidas.first == op_colors[0] || piezasComidas.first == op_colors[1])
                 {
-                    puntuacion_oponente += 10;
+                    puntuacion_oponente += -5;
                 }
                 else
                 {
-                    puntuacion_oponente += 40;
+                    puntuacion_oponente += 20;
                 }
             }
 
             if (estado.goalBounce())
             {
-                puntuacion_oponente += 3;
+                puntuacion_oponente += 1;
             }
             
         }
@@ -383,7 +387,7 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador){
                         }
                         else if (estado.piecesAtGoal(c) == 2)
                         {
-                            puntuacion_oponente += (100-estado.distanceToGoal(c,i)) * 2;//Meterla ya porque nos dara la victoria
+                            puntuacion_oponente += (100-estado.distanceToGoal(c,i)) * 4;//Meterla ya porque nos dara la victoria
                         } 
                     }
                 }
