@@ -147,11 +147,23 @@ void AIPlayer::think(color & c_piece, int & id_piece, int & dice) const{
             valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
             break;
         case 1:
-            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion1);
+            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion1);//Solo el 1
             break;
         case 2:
-            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion2);
+            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion2);//Solo el 1
             break;
+        case 3:
+            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion3);//Gana el nivel 1 y el 2
+            break;
+        case 4:
+            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion4);//Es como la 3 pero con un if más XD
+            break;
+        case 5:
+            
+            break;      
+        case 6:
+            
+            break;         
     }
     cout << "Valor MiniMax: " << valor << "  Accion: " << str(c_piece) << " " << id_piece << " " << dice << endl;
 
@@ -519,6 +531,210 @@ double AIPlayer::MiValoracion2(const Parchis &estado, int jugador){
 
 
 }
+double AIPlayer::MiValoracion3(const Parchis &estado, int jugador){
+    int ganador = estado.getWinner();
+    int oponente = (jugador + 1) % 2;
+    const int CASILLASRECORRER = 68 + 7; // Las casillas que va a recorrer cada ficha
+
+    if (ganador == jugador) {
+        return gana; // Valor alto para la victoria
+    } else if (ganador == oponente) {
+        return pierde; // Valor bajo para la derrota
+    } else {
+        vector<color> my_colors = estado.getPlayerColors(jugador);
+        vector<color> op_colors = estado.getPlayerColors(oponente);
+
+        double puntuacion_jugador = 0.0;
+
+        for (int i = 0; i < my_colors.size(); i++) {
+            color c = my_colors[i];
+
+            // Penaliza piezas en casa, fomenta moverlas
+            puntuacion_jugador -= estado.piecesAtHome(c) * 5;
+
+            // Fomenta piezas en la meta
+            puntuacion_jugador += estado.piecesAtGoal(c) * 50;
+
+            // Evalúa cada ficha individualmente
+            for (int j = 0; j < num_pieces; j++) {
+                int distance = estado.distanceToGoal(c, j);
+                if (distance > 0) {
+                    puntuacion_jugador += (CASILLASRECORRER - distance) * 0.1; // Fomenta el avance
+                }
+            }
+        }
+
+        // Factor de captura y movimiento a meta
+        if (estado.getCurrentPlayerId() == jugador) {
+            if (estado.isEatingMove()) {
+                pair<color, int> Comidas = estado.eatenPiece();
+                puntuacion_jugador += (Comidas.first == my_colors[0] || Comidas.first == my_colors[1]) ? 10 : 50;
+            }
+            if (estado.isGoalMove()) {
+                puntuacion_jugador += 20;
+            }
+            if (estado.goalBounce()) {
+                puntuacion_jugador -= 10; // Penaliza rebotar en la meta
+            }
+        }
+
+        double puntuacion_oponente = 0.0;
+
+        for (int i = 0; i < op_colors.size(); i++) {
+            color c = op_colors[i];
+
+            puntuacion_oponente -= estado.piecesAtHome(c) * 5;
+            puntuacion_oponente += estado.piecesAtGoal(c) * 50;
+
+            for (int j = 0; j < num_pieces; j++) {
+                int distance = estado.distanceToGoal(c, j);
+                if (distance > 0) {
+                    puntuacion_oponente += (CASILLASRECORRER - distance) * 0.1;
+                }
+            }
+        }
+
+        if (estado.getCurrentPlayerId() == oponente) {
+            if (estado.isEatingMove()) {
+                pair<color, int> Comidas = estado.eatenPiece();
+                puntuacion_oponente += (Comidas.first == op_colors[0] || Comidas.first == op_colors[1]) ? 10 : 50;
+            }
+            if (estado.isGoalMove()) {
+                puntuacion_oponente += 20;
+            }
+            if (estado.goalBounce()) {
+                puntuacion_oponente -= 10;
+            }
+        }
+
+        return puntuacion_jugador - puntuacion_oponente;
+    }
+}
+double AIPlayer::MiValoracion4(const Parchis &estado, int jugador) {
+    int ganador = estado.getWinner();
+    int oponente = (jugador + 1) % 2;
+    const int CASILLASRECORRER = 68 + 7; // Las casillas que va a recorrer cada ficha
+
+    if (ganador == jugador) {
+        return gana; // Valor alto para la victoria
+    } else if (ganador == oponente) {
+        return pierde; // Valor bajo para la derrota
+    } else {
+        vector<color> my_colors = estado.getPlayerColors(jugador);
+        vector<color> op_colors = estado.getPlayerColors(oponente);
+
+        double puntuacion_jugador = 0.0;
+
+        // Encuentra el color del jugador con más piezas en la meta
+        color max_goal_color;
+        int max_pieces_at_goal = -1;
+        for (int i = 0; i < my_colors.size(); i++) {
+            color c = my_colors[i];
+            int pieces_at_goal = estado.piecesAtGoal(c);
+            if (pieces_at_goal > max_pieces_at_goal) {
+                max_pieces_at_goal = pieces_at_goal;
+                max_goal_color = c;
+            }
+        }
+
+        for (int i = 0; i < my_colors.size(); i++) {
+            color c = my_colors[i];
+
+            // Penaliza piezas en casa, fomenta moverlas
+            puntuacion_jugador -= estado.piecesAtHome(c) * 5;
+
+            // Fomenta piezas en la meta con un peso mayor
+            int pieces_at_goal = estado.piecesAtGoal(c);
+            puntuacion_jugador += pieces_at_goal * 100;
+
+            // Bonus adicional por tener dos piezas en la meta (ya que con tres se gana)
+            if (pieces_at_goal == 2) {
+                puntuacion_jugador += 200; // Incentivo por estar muy cerca de la victoria
+            }else if (pieces_at_goal == 1){
+                puntuacion_jugador += 50;
+            }   
+
+            // Evalúa cada ficha individualmente
+            for (int j = 0; j < num_pieces; j++) {
+                int distance = estado.distanceToGoal(c, j);
+                if (distance > 0) {
+                    // Fomenta más el avance de las piezas del color con más piezas en la meta
+                    double factor = (c == max_goal_color) ? 0.2 : 0.1;
+                    puntuacion_jugador += (CASILLASRECORRER - distance) * factor;
+                }
+            }
+        }
+
+        // Factor de captura y movimiento a meta
+        if (estado.getCurrentPlayerId() == jugador) {
+            if (estado.isEatingMove()) {
+                pair<color, int> Comidas = estado.eatenPiece();
+                puntuacion_jugador += (Comidas.first == my_colors[0] || Comidas.first == my_colors[1]) ? 10 : 50;
+            }
+            if (estado.isGoalMove()) {
+                puntuacion_jugador += 20;
+            }
+            if (estado.goalBounce()) {
+                puntuacion_jugador -= 10; // Penaliza rebotar en la meta
+            }
+        }
+
+        double puntuacion_oponente = 0.0;
+
+        // Encuentra el color del oponente con más piezas en la meta
+        color max_goal_color_op;
+        int max_pieces_at_goal_op = -1;
+        for (int i = 0; i < op_colors.size(); i++) {
+            color c = op_colors[i];
+            int pieces_at_goal = estado.piecesAtGoal(c);
+            if (pieces_at_goal > max_pieces_at_goal_op) {
+                max_pieces_at_goal_op = pieces_at_goal;
+                max_goal_color_op = c;
+            }
+        }
+
+        for (int i = 0; i < op_colors.size(); i++) {
+            color c = op_colors[i];
+
+            puntuacion_oponente -= estado.piecesAtHome(c) * 5;
+            int pieces_at_goal = estado.piecesAtGoal(c);
+            puntuacion_oponente += pieces_at_goal * 100;
+
+            // Bonus adicional por tener dos piezas en la meta (ya que con tres se gana)
+            if (pieces_at_goal == 2) {
+                puntuacion_oponente += 200; // Incentivo por estar muy cerca de la victoria
+            }else if (pieces_at_goal == 1){
+                puntuacion_oponente += 50;
+            }
+
+            for (int j = 0; j < num_pieces; j++) {
+                int distance = estado.distanceToGoal(c, j);
+                if (distance > 0) {
+                    double factor = (c == max_goal_color_op) ? 0.2 : 0.1;
+                    puntuacion_oponente += (CASILLASRECORRER - distance) * factor;
+                }
+            }
+        }
+
+        if (estado.getCurrentPlayerId() == oponente) {
+            if (estado.isEatingMove()) {
+                pair<color, int> Comidas = estado.eatenPiece();
+                puntuacion_oponente += (Comidas.first == op_colors[0] || Comidas.first == op_colors[1]) ? 10 : 50;
+            }
+            if (estado.isGoalMove()) {
+                puntuacion_oponente += 20;
+            }
+            if (estado.goalBounce()) {
+                puntuacion_oponente -= 10;
+            }
+        }
+
+        return puntuacion_jugador - puntuacion_oponente;
+    }
+}
+
+
+
 
 
 

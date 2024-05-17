@@ -79,7 +79,8 @@ class AIPlayer: public Player{
 
         static double MiValoracion1(const Parchis &estado, int player); //Para el nivel 1
         static double MiValoracion2(const Parchis &estado, int player); //Para el nivel 2
-        //static double MiValoracion3(const Parchis &estado, int player); //Para el nivel 3
+        static double MiValoracion3(const Parchis &estado, int player); //Para el nivel 3
+        static double MiValoracion4(const Parchis &estado, int player); //Otra más veremos si hace falta otra 
         //Ya veremos si hacen falta más valoraciones por ahora veamos con 3 
 
         //UwU
