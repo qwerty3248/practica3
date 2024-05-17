@@ -1,7 +1,10 @@
 Aqui apuntare el cuaderno de desarrolo para ver que voy haciendo 
 Primero complete el tutorial (7/5/2024)
+
 Ahora he hecho algo de mi valoracion, he creado 2 pero creo que con una sirve, ademas he hecho la funcion de poda pero no la probe (15/5/2024)
 
 Cambio en los valores de la valoracion pero todavia hace cosas ilogicas, todavia quedar implementar los dados (16/5/2024)
 La funcion de Poda_alfabeta funciona correctamente(16/5/2024)
+
+Jugando contra el ninja 1, no soy capaz de ganar todavia al ninja 1(17/5/2024)
 

@@ -5,7 +5,7 @@ const double masinf = 9999999999.0, menosinf = -9999999999.0;
 const double gana = masinf - 1, pierde = menosinf + 1;
 const int num_pieces = 3;
 const int PROFUNDIDAD_MINIMAX = 4;  // Umbral maximo de profundidad para el metodo MiniMax
-const int PROFUNDIDAD_ALFABETA = 3; // Umbral maximo de profundidad para la poda Alfa_Beta
+const int PROFUNDIDAD_ALFABETA = 6; // Umbral maximo de profundidad para la poda Alfa_Beta
 
 bool AIPlayer::move(){
     cout << "Realizo un movimiento automatico" << endl;
