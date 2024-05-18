@@ -77,10 +77,11 @@ class AIPlayer: public Player{
          */
         double Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristic)(const Parchis &, int)) const;
 
-        static double MiValoracion1(const Parchis &estado, int player); //Para el nivel 1
-        static double MiValoracion2(const Parchis &estado, int player); //Para el nivel 2
-        static double MiValoracion3(const Parchis &estado, int player); //Para el nivel 3
-        static double MiValoracion4(const Parchis &estado, int player); //Otra más veremos si hace falta otra 
+        //static double MiValoracion1(const Parchis &estado, int player); //Para el nivel 1
+        //static double MiValoracion2(const Parchis &estado, int player); //Para el nivel 2
+        //static double MiValoracion3(const Parchis &estado, int player); //Para el nivel 3
+        static double MiValoracion1(const Parchis &estado, int player); //Otra más veremos si hace falta otra 
+        static double MiValoracion2(const Parchis &estado, int player); //Otra para ver si le ganamos al 3
         //Ya veremos si hacen falta más valoraciones por ahora veamos con 3 
 
         //UwU
