@@ -147,11 +147,14 @@ void AIPlayer::think(color & c_piece, int & id_piece, int & dice) const{
             valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
             break;
         case 1:
-            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion1);//Solo el 1
+            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion1);
             break;
         case 2:
-            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion2);//Solo el 1
+            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion2);
             break;
+        case 3 :
+            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion3);
+            break;    
                 
     }
     cout << "Valor MiniMax: " << valor << "  Accion: " << str(c_piece) << " " << id_piece << " " << dice << endl;
@@ -233,9 +236,9 @@ double AIPlayer::ValoracionTest(const Parchis &estado, int jugador)
 
 
 // si lo hace: 👌 no lo hace: 𐢫
-//EL nivel 1: primero  👌 | segundo 👌
-//El nivel 2: primero  👌 | segundo 👌
-//El nivel 3: primero   | segundo 
+//El nivel 1: primero  👌 | segundo 👌 
+//El nivel 2: primero  👌 | segundo 👌 
+//El nivel 3: primero  X | segundo X
 double AIPlayer::MiValoracion1(const Parchis &estado, int jugador) {
     int ganador = estado.getWinner();
     int oponente = (jugador + 1) % 2;
@@ -283,7 +286,7 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador) {
                 int distance = estado.distanceToGoal(c, j);
                 if (distance > 0) {
                     // Fomenta más el avance de las piezas del color con más piezas en la meta
-                    double factor = (c == max_goal_color) ? 0.2 : 0.1;
+                    double factor = (c == max_goal_color) ? 0.2 : 0.1; // (0.2 y 0.1)con 2 y 0.5 le gana al tres pero no al 2
                     puntuacion_jugador += (CASILLASRECORRER - distance) * factor;
                 }
             }
@@ -332,7 +335,7 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador) {
             for (int j = 0; j < num_pieces; j++) {
                 int distance = estado.distanceToGoal(c, j);
                 if (distance > 0) {
-                    double factor = (c == max_goal_color_op) ? 0.2 : 0.1;
+                    double factor = (c == max_goal_color_op) ? 0.2 : 0.1; 
                     puntuacion_oponente += (CASILLASRECORRER - distance) * factor;
                 }
             }
@@ -354,8 +357,161 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador) {
         return puntuacion_jugador - puntuacion_oponente;
     }
 }
-//No gana al 3 ni pa tras 
+
+
+bool FichaMecomen(const Parchis &actual, const Dice &dice, vector<color> color_jug, vector<color> color_op)
+{
+    for (int i = 0; i < color_jug.size(); ++i)
+    {   
+        color c = color_jug[i];
+        for (int j = 0; i < num_pieces; ++j)
+        {
+            //Ahora vamos a ver si alguna de las piezas del rival amenaza a alguna mia 
+            for (int k = 0; k < color_op.size(); ++k)
+            {
+                color o = color_op[k];
+                for (int l = 0; l < num_pieces; ++l)
+                {
+                    int distancia = actual.getBoard().getPiece(c,j).get_box().num - actual.getBoard().getPiece(o,l).get_box().num;
+                    //Aqui miramos si la distancia de el rival es alguno de los dados elegidos disponibles y si lo tiene disponible
+                    if ((distancia > 0 && distancia <= 6) and dice.isAvailable(c,distancia))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+//Con esta funcion hacemos lo mismo pero lo unico que miro si puedo comer 
+bool FichaComestible(const Parchis &actual, const Dice &dice, vector<color> color_jug, vector<color> color_op)
+{
+    for (int i = 0; i < color_jug.size(); ++i)
+    {   
+        color c = color_jug[i];
+        for (int j = 0; j < num_pieces; ++j)
+        {
+            for (int k = 0; k < color_op.size(); ++k)
+            {
+                color o = color_op[k];
+                for (int l = 0; l < num_pieces; ++l)
+                {
+                    int distancia = actual.getBoard().getPiece(o, l).get_box().num - actual.getBoard().getPiece(c, j).get_box().num;
+                    if ((distancia > 0 && distancia <= 6) and dice.isAvailable(c, distancia))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
+//Este punto de vista nuevo no funciona ahora es el 3 el que cambio un poco
 double AIPlayer::MiValoracion2(const Parchis &estado, int jugador) {
+    int ganador = estado.getWinner();
+    int oponente = (jugador + 1) % 2;
+    const int CASILLASRECORRER = 68 + 7; // Las casillas que va a recorrer cada ficha
+    const int NUMFICHAS = 3;
+
+    if (ganador == jugador) {
+        return gana; // Valor alto para la victoria
+    } else if (ganador == oponente) {
+        return pierde; // Valor bajo para la derrota
+    } else {
+        vector<color> my_colors = estado.getPlayerColors(jugador);
+        vector<color> op_colors = estado.getPlayerColors(oponente);
+
+        double puntuacion_jugador = 0.0;
+        
+        for (int i = 0; i < my_colors.size(); i++) {
+            color c = my_colors[i];
+
+            // Penaliza piezas en casa, fomenta moverlas
+            puntuacion_jugador -= (NUMFICHAS - estado.piecesAtHome(c)) * 10;
+
+            // Fomenta piezas en la meta con un peso mayor
+            int pieces_at_goal = estado.piecesAtGoal(c);
+            puntuacion_jugador += pieces_at_goal * 50;
+
+            // Bonus adicional por tener dos piezas en la meta (ya que con tres se gana)
+            /*if (pieces_at_goal == 2) {
+                puntuacion_jugador += 200; // Incentivo por estar muy cerca de la victoria
+            } *///Esto no hace nada casi   
+
+            // Evalúa cada ficha individualmente
+            for (int j = 0; j < num_pieces; j++) {
+              if (estado.distanceToGoal(c,j) < 11)
+              {
+                puntuacion_jugador += 20;
+              } 
+              if (estado.isSafePiece(c,j))
+              {
+                puntuacion_jugador += 10;
+              }
+              //cout << "Antes de fichameCom\n"; 
+              if (!estado.isSafePiece(c,j) and estado.distanceToGoal(c,j) < 11 and FichaMecomen(estado,estado.getDice(),my_colors,op_colors))
+              {
+                puntuacion_jugador -= 20;
+              }
+              //cout << "Antes de fichaCom\n";
+              if (FichaComestible(estado,estado.getDice(),my_colors,op_colors))
+              {
+                puntuacion_jugador += 20;
+              }
+              //cout << "Despues de fichaComestible\n";
+              if (estado.eatenPiece().first != my_colors[0] and estado.eatenPiece().first != my_colors[1] and estado.eatenPiece().first !=none)
+              {
+                puntuacion_jugador += 15;
+              }
+                
+            }
+        }
+
+
+        double puntuacion_oponente = 0.0;
+
+
+        for (int i = 0; i < op_colors.size(); i++) {
+            color c = op_colors[i];
+
+            puntuacion_oponente -= (NUMFICHAS - estado.piecesAtHome(c)) * 5;
+            int pieces_at_goal = estado.piecesAtGoal(c);
+            puntuacion_oponente += pieces_at_goal * 30;
+
+
+            for (int j = 0; j < num_pieces; j++) {
+                if (estado.distanceToGoal(c,j) < 11)
+                {
+                    puntuacion_oponente += 20;
+                } 
+                if (estado.isSafePiece(c,j))
+                {
+                    puntuacion_oponente += 10;
+                } 
+                if (!estado.isSafePiece(c,j) and estado.distanceToGoal(c,j) < 11 and FichaMecomen(estado,estado.getDice(),my_colors,op_colors))
+                {
+                    puntuacion_oponente -= 20;
+                }
+                if (FichaComestible(estado,estado.getDice(),my_colors,op_colors))
+                {
+                    puntuacion_oponente += 20;
+                }
+                if (estado.eatenPiece().first != op_colors[0] and estado.eatenPiece().first != op_colors[1] and estado.eatenPiece().first !=none)
+                {
+                    puntuacion_oponente += 15;
+                }
+                
+            }
+        }
+
+        return puntuacion_jugador - puntuacion_oponente;
+    }
+}
+
+double AIPlayer::MiValoracion3(const Parchis &estado, int jugador) {
     int ganador = estado.getWinner();
     int oponente = (jugador + 1) % 2;
     const int CASILLASRECORRER = 68 + 7; // Las casillas que va a recorrer cada ficha
@@ -369,11 +525,6 @@ double AIPlayer::MiValoracion2(const Parchis &estado, int jugador) {
         vector<color> op_colors = estado.getPlayerColors(oponente);
 
         double puntuacion_jugador = 0.0;
-        //Mirar el uso del dado especial
-        /*if ()
-        {
-            puntuacion_jugador += estado.getPower(jugador) * 20; //Ajustar para todos los valores
-        }*/
 
         // Encuentra el color del jugador con más piezas en la meta
         color max_goal_color;
@@ -395,25 +546,20 @@ double AIPlayer::MiValoracion2(const Parchis &estado, int jugador) {
 
             // Fomenta piezas en la meta con un peso mayor
             int pieces_at_goal = estado.piecesAtGoal(c);
-            puntuacion_jugador += pieces_at_goal * 100;
+            puntuacion_jugador += pieces_at_goal * 150;
 
             // Bonus adicional por tener dos piezas en la meta (ya que con tres se gana)
             if (pieces_at_goal == 2) {
-                puntuacion_jugador += 200; // Incentivo por estar muy cerca de la victoria
-            }
+                puntuacion_jugador += 300; // Incentivo por estar muy cerca de la victoria
+            }   
 
             // Evalúa cada ficha individualmente
             for (int j = 0; j < num_pieces; j++) {
                 int distance = estado.distanceToGoal(c, j);
                 if (distance > 0) {
                     // Fomenta más el avance de las piezas del color con más piezas en la meta
-                    double factor = (c == max_goal_color) ? 0.2 : 0.1;
+                    double factor = (c == max_goal_color) ? 1.5 : 0.75; // Factores ajustados
                     puntuacion_jugador += (CASILLASRECORRER - distance) * factor;
-                }
-
-                // Considerar si la ficha está en una casilla segura
-                if (estado.isSafeBox(estado.getBoard().getPiece(c,j).get_box())) {
-                    puntuacion_jugador += 10; // Bonificación por estar en una casilla segura
                 }
             }
         }
@@ -422,13 +568,13 @@ double AIPlayer::MiValoracion2(const Parchis &estado, int jugador) {
         if (estado.getCurrentPlayerId() == jugador) {
             if (estado.isEatingMove()) {
                 pair<color, int> Comidas = estado.eatenPiece();
-                puntuacion_jugador += (Comidas.first == my_colors[0] || Comidas.first == my_colors[1]) ? 20 : 50;
+                puntuacion_jugador += (Comidas.first == my_colors[0] || Comidas.first == my_colors[1]) ? 30 : 60;
             }
             if (estado.isGoalMove()) {
-                puntuacion_jugador += 50;
+                puntuacion_jugador += 40;
             }
             if (estado.goalBounce()) {
-                puntuacion_jugador -= 20; // Penaliza rebotar en la meta
+                puntuacion_jugador -= 5; // Penaliza rebotar en la meta, pero no demasiado
             }
         }
 
@@ -451,23 +597,18 @@ double AIPlayer::MiValoracion2(const Parchis &estado, int jugador) {
 
             puntuacion_oponente -= estado.piecesAtHome(c) * 10;
             int pieces_at_goal = estado.piecesAtGoal(c);
-            puntuacion_oponente += pieces_at_goal * 100;
+            puntuacion_oponente += pieces_at_goal * 150;
 
             // Bonus adicional por tener dos piezas en la meta (ya que con tres se gana)
             if (pieces_at_goal == 2) {
-                puntuacion_oponente += 200; // Incentivo por estar muy cerca de la victoria
+                puntuacion_oponente += 300; // Incentivo por estar muy cerca de la victoria
             }
 
             for (int j = 0; j < num_pieces; j++) {
                 int distance = estado.distanceToGoal(c, j);
                 if (distance > 0) {
-                    double factor = (c == max_goal_color_op) ? 0.2 : 0.1;
+                    double factor = (c == max_goal_color_op) ? 1.5 : 0.75; // Factores ajustados
                     puntuacion_oponente += (CASILLASRECORRER - distance) * factor;
-                }
-
-                // Considerar si la ficha está en una casilla segura
-                if (estado.isSafeBox(estado.getBoard().getPiece(c,j).get_box())) {
-                    puntuacion_oponente += 10; // Bonificación por estar en una casilla segura
                 }
             }
         }
@@ -475,19 +616,20 @@ double AIPlayer::MiValoracion2(const Parchis &estado, int jugador) {
         if (estado.getCurrentPlayerId() == oponente) {
             if (estado.isEatingMove()) {
                 pair<color, int> Comidas = estado.eatenPiece();
-                puntuacion_oponente += (Comidas.first == op_colors[0] || Comidas.first == op_colors[1]) ? 20 : 50;
+                puntuacion_oponente += (Comidas.first == op_colors[0] || Comidas.first == op_colors[1]) ? 30 : 60;
             }
             if (estado.isGoalMove()) {
-                puntuacion_oponente += 50;
+                puntuacion_oponente += 40;
             }
             if (estado.goalBounce()) {
-                puntuacion_oponente -= 20;
+                puntuacion_oponente -= 5;
             }
         }
 
         return puntuacion_jugador - puntuacion_oponente;
     }
 }
+
 
 
 

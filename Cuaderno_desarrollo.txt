@@ -1,16 +1,629 @@
-Aqui apuntare el cuaderno de desarrolo para ver que voy haciendo 
-Primero complete el tutorial (7/5/2024)
+Aqui apuntare el cuaderno de desarrollo para ver que voy haciendo 
+Aqui esta la mem en txt
 
-Ahora he hecho algo de mi valoracion, he creado 2 pero creo que con una sirve, ademas he hecho la funcion de poda pero no la probe (15/5/2024)
+ 
 
-Cambio en los valores de la valoracion pero todavia hace cosas ilogicas, todavia quedar implementar los dados (16/5/2024)
-La funcion de Poda_alfabeta funciona correctamente(16/5/2024)
+Memoria
+1.Analisis del problema 
+    En esta práctica se debe hacer una variante del parchis, se puede elegir los dados y el 3 no existe, los dados se restaruan una vez que se han gastado todos.
+    Además hay un dado especial que se carga con las casillas que se mueven las fichas, teniendo el movimiento rápido, BOOM, CATAPUM, la estrella el movimiento megamushroon
+    ,el movimiento bala y el catapumchimpum.
+    El objetivo es ganarle a los 4 niveles(ninjas), se nos plantean dos cosas en esta practica, implementar o una Poda_alfabeta o un minmax y además hacer una heuristica que gane ademas
+    los ninjas.
 
-Jugando contra el ninja 1, no soy capaz de ganar todavia al ninja 1, con la valoracion 1, pero con la valoracion 2 le gano al 1 (17/5/2024)
+2.Descripción del problema
+    Para empezar aqui se encuentra la Poda_alfabeta que hemos implementado:
+    double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristic)(const Parchis &, int)) const
+    {
+        //Si la profundidad es igual al la profundidad_max o se acabo el juego damos la puntuacion
+        if (profundidad == profundidad_max || actual.gameOver()){
+            return heuristic(actual,jugador);
+        }
 
-He sacado más versiones de la valoracion, ahora gano al nivel 2 y estoy intentando mejorar esa version para ver si gana al nivel 3 (18/5/2024)
+        //🚗🚗
+        bool Max_verstappen = actual.getCurrentPlayerId() == jugador; //Nodo max ?
+        double valor; //valor que devuelve el nene
 
-La valoracion 4 le gana tanto al nivel 1 como al nivel 2 al completo, ahora voy a realizar pruebas al esa valoracion para que gane al 3 (18/5/2024)
+        ParchisBros hijos = actual.getChildren();//nenes
+
+        for (auto it = hijos.begin(); it != hijos.end(); ++it)
+        {   
+            //Miramos que nos devuelve el nen
+            valor = Poda_AlfaBeta(*it,jugador,profundidad+1,profundidad_max,c_piece,id_piece,dice,alpha,beta,heuristic);
+            if (Max_verstappen)//Si somos max 
+            {   
+                if (alpha < valor) // Si el nuevo valor es mejor que alpha lo actualizo
+                {
+                    alpha = valor;
+                    if (profundidad == 0) // SI es el primero comgemos la jugada
+                    {   
+                        c_piece = it.getMovedColor();
+                        id_piece = it.getMovedPieceId();
+                        dice = it.getMovedDiceValue();                  
+                    }
+                }
+
+                if (alpha >= beta)//Si podamos devolvemos beta 
+                {
+                    //cout << "Podo alpha\n";
+                    return beta;
+
+                }
+
+            }
+            else //Si no es maximo es un minimo
+            {
+                if (beta > valor)//Si el valor es menor se actualiza
+                {
+                    beta = valor;
+                }
+
+                if (beta <= alpha)//Si se poda
+                {
+                    //cout<<"Podo beta\n";
+                    return alpha;
+                }
+            }
+
+        }//Salida del for
+
+        if (Max_verstappen)
+        {
+            return alpha;
+        }
+        else
+        {
+            return beta;
+        } 
+
+    }    
+
+    Al hace las pruebas pertinentes para saber si la poda funciona correctamente salen los mismos resultados al hacer ninja contra ninja que ninja contra mi valoraciontest y la podamos
+    lo cual hace que la Poda_AlfaBeta sea correcta.
+    Ahora vamos a explciarla por partes:
+    1.Declaracion de la funcion:
+    double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristic)(const Parchis &, int)) const
+    
+    Entrada:
+
+    actual: Estado actual del juego.
+
+    jugador: ID del jugador que está evaluando la jugada.
+
+    profundidad: Profundidad actual en el árbol de búsqueda.
+
+    profundidad_max: Profundidad máxima permitida en la búsqueda.
+
+    c_piece: Referencia para almacenar el color de la pieza movida.
+
+    id_piece: Referencia para almacenar el ID de la pieza movida.
+
+    dice: Referencia para almacenar el valor del dado usado.
+
+    alpha: Valor alfa para la poda.
+
+    beta: Valor beta para la poda.
+
+    heuristic: Puntero a la función heurística que evalúa el estado del juego.
+
+    Salida:
+
+    Retorna un valor double que representa la evaluación heurística del estado del juego.
+
+    2.Condicion para acabar
+    
+    // Si la profundidad es igual a la profundidad_max o se acabó el juego, damos la puntuación
+    if (profundidad == profundidad_max || actual.gameOver()){
+        return heuristic(actual,jugador);
+    }
+    Si se alcanza la profundidad máxima o el juego ha terminado (gameOver), se devuelve la evaluación heurística del estado actual del juego para el jugador.
+
+    3.Identificacion del nodo Max/Min 
+
+    bool Max_verstappen = actual.getCurrentPlayerId() == jugador; // Nodo max?
+    double valor; // Valor que devuelve el nene
+
+    Max_verstappen es una variable booleana que indica si el nodo actual es un nodo de maximización (true si es el turno del jugador actual, false si es el turno del oponente).
+    valor se utilizará para almacenar la evaluación heurística de los estados hijos.
+
+    4.Generación de Hijos
+
+    ParchisBros hijos = actual.getChildren(); // Nenes
+    hijos contiene todos los estados posibles resultantes de las jugadas legales desde el estado actual.
+
+    5.Iteración Sobre los Hijos
+
+    for (auto it = hijos.begin(); it != hijos.end(); ++it)
+
+    Se recorre cada hijo en el conjunto de estados hijos.
+
+    6.Recursión
+    
+    // Miramos que nos devuelve el nen
+    valor = Poda_AlfaBeta(*it,jugador,profundidad+1,profundidad_max,c_piece,id_piece,dice,alpha,beta,heuristic);
+
+    Se llama recursivamente a la función Poda_AlfaBeta para evaluar el estado hijo, incrementando la profundidad.
+
+    7.Actualización y Poda en Nodos Max
+
+            if (Max_verstappen) // Si somos max
+            {
+                if (alpha < valor) // Si el nuevo valor es mejor que alpha lo actualizo
+                {
+                    alpha = valor;
+                    if (profundidad == 0) // Si es el primero comgemos la jugada
+                    {
+                        c_piece = it.getMovedColor();
+                        id_piece = it.getMovedPieceId();
+                        dice = it.getMovedDiceValue();
+                    }
+                }
+
+                if (alpha >= beta) // Si podamos devolvemos beta
+                {
+                    // cout << "Podo alpha\n";
+                    return beta;
+                }
+            }
+            else // Si no es maximo es un minimo
+            {
+                if (beta > valor) // Si el valor es menor se actualiza
+                {
+                    beta = valor;
+                }
+
+                if (beta <= alpha) // Si se poda
+                {
+                    // cout << "Podo beta\n";
+                    return alpha;
+                }
+            }
+
+    Si el nodo es de maximización:
+
+    Se actualiza alpha si valor es mayor que alpha.
+    Si estamos en la profundidad 0 (la raíz), se actualizan las referencias c_piece, id_piece, y dice con la mejor jugada.
+    Si alpha es mayor o igual a beta, se poda y se devuelve beta.    
+
+    8.Actualización y Poda en Nodos Min
+
+    if (beta > valor)//Si el valor es menor se actualiza
+    {
+           beta = valor;
+    }
+
+    if (beta <= alpha)//Si se poda
+    {
+            //cout<<"Podo beta\n";
+           return alpha;
+    }
+
+
+    Si el nodo es de minimización:
+
+    Se actualiza beta si valor es menor que beta.
+    Si beta es menor o igual a alpha, se poda y se devuelve alpha.
+
+    9.Devolución del Valor de Evaluación
+
+
+    if (Max_verstappen)
+    {
+        return alpha;
+    }
+    else
+    {
+        return beta;
+    }
+
+
+
+    Después de iterar sobre todos los hijos, se devuelve alpha si es un nodo de maximización, y beta si es un nodo de minimización.
+    
+    Ahora vamos con la valoracion que hemos creado para ganar a los ninjas
+
+    // si lo hace: 👌 no lo hace: 𐢫
+    //El nivel 1: primero  👌 | segundo 👌 
+    //El nivel 2: primero  👌 | segundo 👌 
+    //El nivel 3: primero  X | segundo X
+    double AIPlayer::MiValoracion1(const Parchis &estado, int jugador) {
+        int ganador = estado.getWinner();
+        int oponente = (jugador + 1) % 2;
+        const int CASILLASRECORRER = 68 + 7; // Las casillas que va a recorrer cada ficha
+
+        if (ganador == jugador) {
+            return gana; // Valor alto para la victoria
+        } else if (ganador == oponente) {
+            return pierde; // Valor bajo para la derrota
+        } else {
+            vector<color> my_colors = estado.getPlayerColors(jugador);
+            vector<color> op_colors = estado.getPlayerColors(oponente);
+
+            double puntuacion_jugador = 0.0;
+
+            // Encuentra el color del jugador con más piezas en la meta
+            color max_goal_color;
+            int max_pieces_at_goal = -1;
+            for (int i = 0; i < my_colors.size(); i++) {
+                color c = my_colors[i];
+                int pieces_at_goal = estado.piecesAtGoal(c);
+                if (pieces_at_goal > max_pieces_at_goal) {
+                    max_pieces_at_goal = pieces_at_goal;
+                    max_goal_color = c;
+                }
+            }
+
+            for (int i = 0; i < my_colors.size(); i++) {
+                color c = my_colors[i];
+
+                // Penaliza piezas en casa, fomenta moverlas
+                puntuacion_jugador -= estado.piecesAtHome(c) * 5;
+
+                // Fomenta piezas en la meta con un peso mayor
+                int pieces_at_goal = estado.piecesAtGoal(c);
+                puntuacion_jugador += pieces_at_goal * 100;
+
+                // Bonus adicional por tener dos piezas en la meta (ya que con tres se gana)
+                if (pieces_at_goal == 2) {
+                    puntuacion_jugador += 200; // Incentivo por estar muy cerca de la victoria
+                }   
+
+                // Evalúa cada ficha individualmente
+                for (int j = 0; j < num_pieces; j++) {
+                    int distance = estado.distanceToGoal(c, j);
+                    if (distance > 0) {
+                        // Fomenta más el avance de las piezas del color con más piezas en la meta
+                        double factor = (c == max_goal_color) ? 0.2 : 0.1; // (0.2 y 0.1)con 2 y 0.5 le gana al tres pero no al 2
+                        puntuacion_jugador += (CASILLASRECORRER - distance) * factor;
+                    }
+                }
+            }
+
+            // Factor de captura y movimiento a meta
+            if (estado.getCurrentPlayerId() == jugador) {
+                if (estado.isEatingMove()) {
+                    pair<color, int> Comidas = estado.eatenPiece();
+                    puntuacion_jugador += (Comidas.first == my_colors[0] || Comidas.first == my_colors[1]) ? 10 : 50;
+                }
+                if (estado.isGoalMove()) {
+                    puntuacion_jugador += 20;
+                }
+                if (estado.goalBounce()) {
+                    puntuacion_jugador -= 10; // Penaliza rebotar en la meta
+                }
+            }
+
+            double puntuacion_oponente = 0.0;
+
+            // Encuentra el color del oponente con más piezas en la meta
+            color max_goal_color_op;
+            int max_pieces_at_goal_op = -1;
+            for (int i = 0; i < op_colors.size(); i++) {
+                color c = op_colors[i];
+                int pieces_at_goal = estado.piecesAtGoal(c);
+                if (pieces_at_goal > max_pieces_at_goal_op) {
+                    max_pieces_at_goal_op = pieces_at_goal;
+                    max_goal_color_op = c;
+                }
+            }
+
+            for (int i = 0; i < op_colors.size(); i++) {
+                color c = op_colors[i];
+
+                puntuacion_oponente -= estado.piecesAtHome(c) * 5;
+                int pieces_at_goal = estado.piecesAtGoal(c);
+                puntuacion_oponente += pieces_at_goal * 100;
+
+                // Bonus adicional por tener dos piezas en la meta (ya que con tres se gana)
+                if (pieces_at_goal == 2) {
+                    puntuacion_oponente += 200; // Incentivo por estar muy cerca de la victoria
+                }
+
+                for (int j = 0; j < num_pieces; j++) {
+                    int distance = estado.distanceToGoal(c, j);
+                    if (distance > 0) {
+                        double factor = (c == max_goal_color_op) ? 0.2 : 0.1; 
+                        puntuacion_oponente += (CASILLASRECORRER - distance) * factor;
+                    }
+                }
+            }
+
+            if (estado.getCurrentPlayerId() == oponente) {
+                if (estado.isEatingMove()) {
+                    pair<color, int> Comidas = estado.eatenPiece();
+                    puntuacion_oponente += (Comidas.first == op_colors[0] || Comidas.first == op_colors[1]) ? 10 : 50;
+                }
+                if (estado.isGoalMove()) {
+                    puntuacion_oponente += 20;
+                }
+                if (estado.goalBounce()) {
+                    puntuacion_oponente -= 10;
+                }
+            }
+
+            return puntuacion_jugador - puntuacion_oponente;
+        }
+    }
+
+    Ahora veremos a continuacion la valoracion que he implementado explicada.
+
+    Victoria o Derrota
+        Victoria: Si el jugador ha ganado (ganador == jugador), se devuelve un valor alto (gana).
+        Derrota: Si el oponente ha ganado (ganador == oponente), se devuelve un valor bajo (pierde).
+
+    Valoraciones para el Jugador
+
+    Piezas en Casa
+        Penaliza cada pieza que está en casa (puntuacion_jugador -= estado.piecesAtHome(c) * 5).
+
+    Piezas en la Meta
+        Fomenta cada pieza que está en la meta (puntuacion_jugador += pieces_at_goal * 100).
+        Bonus adicional por tener dos piezas en la meta (puntuacion_jugador += 200).
+
+    Distancia al Objetivo
+        Evalúa la distancia de cada pieza al objetivo, incentivando más el avance de las piezas del color con más piezas en la meta.
+        Factor de ponderación:
+            Color con más piezas en la meta: factor = 0.2.
+            Otros colores: factor = 0.1.
+        Fórmula: puntuacion_jugador += (CASILLASRECORRER - distance) * factor.
+
+    Movimientos Especiales
+        Captura: Si se realiza una captura (estado.isEatingMove()), se otorga un bono dependiendo del color de la pieza capturada.
+            Si la pieza capturada es del jugador: puntuacion_jugador += 10.
+            Si la pieza capturada es del oponente: puntuacion_jugador += 50.
+        Movimiento a la Meta: Si se mueve una pieza a la meta (estado.isGoalMove()), se otorga un bono de 20 puntos (puntuacion_jugador += 20).
+        Rebote en la Meta: Si una pieza rebota en la meta (estado.goalBounce()), se penaliza con -10 puntos (puntuacion_jugador -= 10).
+
+    Valoraciones para el Oponente
+
+        Piezas en Casa
+            Penaliza cada pieza que está en casa (puntuacion_oponente -= estado.piecesAtHome(c) * 5).
+
+        Piezas en la Meta
+            Fomenta cada pieza que está en la meta (puntuacion_oponente += pieces_at_goal * 100).
+            Bonus adicional por tener dos piezas en la meta (puntuacion_oponente += 200).
+
+        Distancia al Objetivo
+            Evalúa la distancia de cada pieza al objetivo, incentivando más el avance de las piezas del color con más piezas en la meta.
+            Factor de ponderación:
+                Color con más piezas en la meta: factor = 0.2.
+                Otros colores: factor = 0.1.
+            Fórmula: puntuacion_oponente += (CASILLASRECORRER - distance) * factor.
+
+        Movimientos Especiales
+            Captura: Si se realiza una captura (estado.isEatingMove()), se otorga un bono dependiendo del color de la pieza capturada.
+                Si la pieza capturada es del oponente: puntuacion_oponente += 10.
+                Si la pieza capturada es del jugador: puntuacion_oponente += 50.
+            Movimiento a la Meta: Si se mueve una pieza a la meta (estado.isGoalMove()), se otorga un bono de 20 puntos (puntuacion_oponente += 20).
+            Rebote en la Meta: Si una pieza rebota en la meta (estado.goalBounce()), se penaliza con -10 puntos (puntuacion_oponente -= 10).
+
+
+    Ventajas de la valoracion:
+    Las ventajas que le veo a la heuristica es que es bastante equilibrada a la hora de jugar y es capaz de hacer muy buenas jugadas para llegar a la victoria.
+    Por lo que logra vencer al ninja 0 al 1 y al 2.
+
+    Desventajas de la valoracion:
+    No logra vencer al ninja 3 además de que a veces no come cuando deberia o a veces no calcula bien cuando se lo van a comer o no.
+
+    Menciones a las otras heuristicas:
+    Las otras heuristicas son evoluciones de las primeras que no conseguian ganar al nivel 1 la segunda es un intento de otro planteamiento y la 3 es un intento de
+    remodelar la 1 para que gane al 3.
+
+    Diario de desarrollo: 
+
+    Primero complete el tutorial (7/5/2024)
+
+    Ahora he hecho algo de mi valoracion, he creado 2 pero creo que con una sirve, ademas he hecho la funcion de poda pero no la probe (15/5/2024)
+
+    Cambio en los valores de la valoracion pero todavia hace cosas ilogicas, todavia quedar implementar los dados (16/5/2024)
+    La funcion de Poda_alfabeta funciona correctamente(16/5/2024)
+
+    Jugando contra el ninja 1, no soy capaz de ganar todavia al ninja 1, con la valoracion 1, pero con la valoracion 2 le gano al 1 (17/5/2024)
+
+    He sacado más versiones de la valoracion, ahora gano al nivel 2 y estoy intentando mejorar esa version para ver si gana al nivel 3 (18/5/2024)
+
+    La valoracion 4 le gana tanto al nivel 1 como al nivel 2 al completo, ahora voy a realizar pruebas al esa valoracion para que gane al 3 (18/5/2024)
+
+    Desarrollo de una parte de la memoria y más pruebas para ver si funciona el nivel 3 (20/5/2024)
+
+    Seguimos intentando sacar el nivel 3 (21/5/2024)
+
+    Nivel 3 (22/5/2024)
+
+    Nivel 3 (23/5/2024) 
+
+    Seguimos con el 3 (24/5/2024)
+
+    Nivel 3 (25/5/2024)
+
+    Nivel 3 (26/5/2024)
+
+    El 3 no sale, acabo la memoria y si consigo el nivel 3 cambio la memoria (27/5/2024)
+
+Partes que quite del .tex 
+
+\begin{enumerate}
+    \item \textbf{Declaracion de la funcion}:
+    \begin{lstlisting}[language=C++]
+    double AIPlayer::Poda_AlfaBeta(
+        const Parchis &actual, 
+        int jugador, 
+        int profundidad, 
+        int profundidad_max, 
+        color &c_piece, 
+        int &id_piece, 
+        int &dice, 
+        double alpha, 
+        double beta, 
+        double (*heuristic)(const Parchis &, int)
+    ) const
+    \end{lstlisting}
+
+    \textbf{Entrada}:
+    \begin{itemize}
+        \item \textbf{actual}: Estado actual del juego.
+        \item \textbf{jugador}: ID del jugador que esta evaluando la jugada.
+        \item \textbf{profundidad}: Profundidad actual en el arbol de busqueda.
+        \item \textbf{profundidad\_max}: Profundidad maxima permitida en la busqueda.
+        \item \textbf{c\_piece}: Referencia para almacenar el color de la pieza movida.
+        \item \textbf{id\_piece}: Referencia para almacenar el ID de la pieza movida.
+        \item \textbf{dice}: Referencia para almacenar el valor del dado usado.
+        \item \textbf{alpha}: Valor alfa para la poda.
+        \item \textbf{beta}: Valor beta para la poda.
+        \item \textbf{heuristic}: Puntero a la función heuristica que evalua el estado del juego.
+    \end{itemize}
+
+    \textbf{Salida}:
+    \begin{itemize}
+        \item Retorna un valor double que representa la evaluación heuristica del estado del juego.
+    \end{itemize}
+
+    \item \textbf{Condicion para acabar}:
+    \begin{lstlisting}[language=C++]
+    
+    if (profundidad == profundidad_max 
+    || actual.gameOver())
+    {
+        return heuristic(actual,jugador);
+    }
+    \end{lstlisting}
+    Si se alcanza la profundidad máxima o el juego ha terminado (gameOver), se devuelve la evaluación heurística del estado actual del juego para el jugador.
+
+    \item \textbf{Identificacion del nodo Max/Min}:
+    \begin{lstlisting}[language=C++]
+    bool Max_verstappen = 
+    actual.getCurrentPlayerId() == jugador; 
+    double valor; 
+    \end{lstlisting}
+    Max\_verstappen es una variable booleana que indica si el nodo actual es un nodo de maximización (true si es el turno del jugador actual, false si es el turno del oponente). Valor se utilizará para almacenar la evaluación heurística de los estados hijos.
+
+    \item \textbf{Generacion de Hijos}:
+    \begin{lstlisting}[language=C++]
+    ParchisBros hijos = actual.getChildren(); 
+    \end{lstlisting}
+    Hijos contiene todos los estados posibles resultantes de las jugadas legales desde el estado actual.
+
+    \item \textbf{Iteracion Sobre los Hijos}:
+    \begin{lstlisting}[language=C++]
+    for (auto it = hijos.begin(); 
+    it != hijos.end(); ++it)
+    \end{lstlisting}
+    Se recorre cada hijo en el conjunto de estados hijos.
+
+    \item \textbf{Recursión}:
+    \begin{lstlisting}[language=C++]
+    
+    valor = 
+    Poda_AlfaBeta(*it,jugador,profundidad+1,
+    profundidad_max,c_piece,id_piece,dice,
+    alpha,beta,heuristic);
+    \end{lstlisting}
+    Se llama recursivamente a la función Poda Alfa-Beta para evaluar el estado hijo, incrementando la profundidad.
+
+    \item \textbf{Actualización y Poda en Nodos Max}:
+    \begin{lstlisting}[language=C++]
+    if (Max_verstappen) 
+    {
+        if (alpha < valor) 
+        {
+            alpha = valor;
+            if (profundidad == 0) 
+            {
+                c_piece = it.getMovedColor();
+                id_piece = it.getMovedPieceId();
+                dice = it.getMovedDiceValue();
+            }
+        }
+
+        if (alpha >= beta) 
+        {
+            return beta;
+        }
+    }
+    else
+    {
+        if (beta > valor)
+        {
+            beta = valor;
+        }
+
+        if (beta <= alpha) 
+        {
+            return alpha;
+        }
+    }
+    \end{lstlisting}
+    Si el nodo es de maximización:
+    \begin{itemize}
+        \item Se actualiza alpha si valor es mayor que alpha.
+        \item Si estamos en la profundidad 0 (la raíz), se actualizan las referencias c\_piece, id\_piece y dice con la mejor jugada.
+        \item Si alpha es mayor o igual a beta, se poda y se devuelve beta.
+    \end{itemize}
+
+    \item \textbf{Actualizacion y Poda en Nodos Min}:
+    \begin{lstlisting}[language=C++]
+    if (beta > valor)
+    {
+        beta = valor;
+    }
+
+    if (beta <= alpha)
+    {
+        return alpha;
+    }
+    \end{lstlisting}
+    Si el nodo es de minimizacion:
+    \begin{itemize}
+        \item Se actualiza beta si valor es menor que beta.
+        \item Si beta es menor o igual a alpha, se poda y se devuelve alpha.
+    \end{itemize}
+
+    \item \textbf{Devolucion del Valor de Evaluacion}:
+    \begin{lstlisting}[language=C++]
+    if (Max_verstappen)
+    {
+        return alpha;
+    }
+    else
+    {
+        return beta;
+    }
+    \end{lstlisting}
+    Al final de la iteracion, se devuelve alpha si el nodo es de maximizacion, y beta si es de minimizacion.
+\end{enumerate}
+
+
+\section{Diario}
+
+Primero complete el tutorial 7/5/2024
+
+Ahora he hecho algo de mi valoracion, he creado 2 pero creo que con una sirve, ademas he hecho la funcion de poda pero no la probe 15/5/2024
+
+Cambio en los valores de la valoracion pero todavia hace cosas ilogicas, todavia quedar implementar los dados 16/5/2024
+La funcion de Poda\_alfabeta funciona correctamente 16/5/2024
+
+Jugando contra el ninja 1, no soy capaz de ganar todavia al ninja 1, con la valoracion 1, pero con la valoracion 2 le gano al 1 17/5/2024
+
+He sacado más versiones de la valoracion, ahora gano al nivel 2 y estoy intentando mejorar esa version para ver si gana al nivel 3 18/5/2024
+
+La valoracion 4 le gana tanto al nivel 1 como al nivel 2 al completo, ahora voy a realizar pruebas al esa valoracion para que gane al 3 18/5/2024
+
+Desarrollo de una parte de la memoria y más pruebas para ver si funciona el nivel 3 20/5/2024
+
+Seguimos intentando sacar el nivel 3 21/5/2024
+
+Nivel 3 22/5/2024
+
+Nivel 3 23/5/2024
+
+Seguimos con el 3 24/5/2024
+
+Nivel 3 25/5/2024
+
+Nivel 3 26/5/2024
+
+El 3 no sale, acabo la memoria y si consigo el nivel 3 cambio la memoria 27/5/2024
+
 
 
 
